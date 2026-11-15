@@ -50,10 +50,10 @@ To verify the downloads, compare their SHA-256 digests with [SHA256SUMS.txt](htt
 
 ```powershell
 python datasets.py list
-python datasets.py download ntu-viral eee_03
+python datasets.py download ratm 12p
 ```
 
-The download writes `data/ntu-viral/eee_03.csv`, with timestamps in seconds and coordinates in meters.
+The download writes `data/ratm/12p.csv`, with timestamps in seconds and coordinates in meters.
 
 The download script retrieves the original trajectory from its provider and checks the SHA-256 against the paper manifest before writing a local `t,x,y,z` CSV. The catalog includes 30 RATM flights, two NeuroBEM Vicon records, and 16 NTU VIRAL Leica prism records. Timestamp differences are converted to seconds, and positions are in meters. If an upstream server or proxy does not support ZIP range requests, obtain the specified source member from the provider and pass it to `datasets.py download ... --local-original PATH`.
 
@@ -64,20 +64,18 @@ The download script retrieves the original trajectory from its provider and chec
 ## Run the two demos
 
 ```powershell
-python demo.py rata --dataset ntu-viral --trajectory eee_03 --max-bytes 15324 --position-rms-mm 4 --speed-rms-mps 0.1 --output demo-rata
-python demo.py point --dataset ntu-viral --trajectory eee_03 --max-bytes 15324 --position-rms-mm 4 --speed-rms-mps 0.1 --output demo-point
+python demo.py rata --dataset ratm --trajectory 12p --max-bytes 10042 --position-rms-mm 4 --speed-rms-mps 0.1 --output demo-rata
+python demo.py point --dataset ratm --trajectory 12p --max-bytes 10042 --position-rms-mm 4 --speed-rms-mps 0.1 --output demo-point
 ```
 
 ### Choose another flight from the paper
 
 You can run any of the 48 listed flights by changing command-line arguments. Run `python datasets.py list` to see the exact IDs grouped by dataset. The dataset keys are `ratm` (30 flights), `neurobem` (two flights), and `ntu-viral` (16 flights).
 
-For example, to switch from NTU VIRAL `eee_03` to RATM `12p`, change `--dataset` to `ratm`, `--trajectory` to `12p`, and pick a new output directory. These commands use 10,042 bytes, twice the paper's 5,021-byte reference cap for this flight.
+For example, to switch from RATM `12p` to NTU VIRAL `eee_03`, change `--dataset` to `ntu-viral`, `--trajectory` to `eee_03`, and pick a new output directory.
 
-```powershell
-python datasets.py download ratm 12p
-python demo.py rata --dataset ratm --trajectory 12p --max-bytes 10042 --position-rms-mm 4 --speed-rms-mps 0.1 --output ratm-12p-rata
-python demo.py point --dataset ratm --trajectory 12p --max-bytes 10042 --position-rms-mm 4 --speed-rms-mps 0.1 --output ratm-12p-point
+```bash
+python datasets.py download ntu-viral eee_03
 ```
 
 The demo downloads the flight automatically when the local input is absent. Set `--max-bytes`, `--position-rms-mm`, and `--speed-rms-mps` for the selected flight and use a fresh `--output` directory on each run. The cap is an absolute byte count. The paper's supplementary record table gives a reference cap for each flight. The demo applies the requested position and velocity limits to the finished file, so a tight cap or strict limits may yield no qualifying archive.
@@ -88,7 +86,7 @@ To try your own flight, replace `--dataset ... --trajectory ...` with `--input y
 
 By default each successful run writes `archive.rata`, `result.json`, and `replay.html`. The comparison page shows original sample markers from the input and a separate curve sampled from the decoder. Drag to rotate the 3D path, scroll or pinch to zoom, and shift-drag to pan. Use **Reset view** to return to the initial framing. The time slider and playback button update both plots. Samples ahead of the cursor appear as unconnected hollow markers. Played samples are filled, and the solid replay curve extends up to the cursor. Reported RMS values come from continuous scoring against the quintic reference built from the original samples. The option `--speed-rms-mps` bounds the RMS norm of the **velocity vector error**. Archive bytes include the full container and all decoding information.
 
-The two `eee_03` commands above should produce archives within 15,324 bytes, with continuous position RMS at most 4 mm and velocity RMS at most 0.1 m/s. One Windows run produced 15,324 bytes in each mode, with position and velocity RMS of 2.517 mm and 0.0843 m/s for RATA and 2.918 mm and 0.0977 m/s for point-only. Open `demo-rata/replay.html` and `demo-point/replay.html` in a browser.
+The commands above use a 10,042-byte cap, twice the paper's 5,021-byte reference cap for RATM flight 12p. Open `demo-rata/replay.html` and `demo-point/replay.html` in a browser.
 
 If no file qualifies, the command exits with code `2` and records the solver outcome in `result.json`. Status `0` denotes completion of the arithmetic graph search, `1` a solver limit, and `2` proof of infeasibility within that arithmetic graph or an insufficient cap for its fixed overhead. The final archive also passes the decoded byte, RMS, and local checks. Encoding builds candidates from the input and can take several minutes on long or fragmented records.
 
@@ -106,7 +104,7 @@ The generated `decoded-flight/decoded.csv` has the original `t,x,y,z` format wit
 3. To measure the reconstruction error yourself, supply the actual path of the original CSV and the decoded CSV. This command uses only those two files and runs without the engine.
 
 ```powershell
-python demo.py compare --input data/ntu-viral/eee_03.csv --decoded decoded-flight/decoded.csv --output compared-flight
+python demo.py compare --input data/ratm/12p.csv --decoded decoded-flight/decoded.csv --output compared-flight
 ```
 
 If you moved the original CSV, replace the `--input` path with its current location.
@@ -133,4 +131,6 @@ On Ubuntu, run `./runtime/rata-engine query demo-rata/archive.rata times.csv dec
 
 This returns `t,x,y,z,vx,vy,vz`. If the requested batch includes a time outside continuous support, the command exits with an error before writing the output CSV.
 
-[![Try the interactive RATA 3D replay](docs/preview.png)](https://ghghgh0001.github.io/Replay-Aware-Trajectory-Compression/)
+The online replay shows the figure-eight RATM flight 12p used in the paper. It uses the paper’s 5,011-byte RATA archive at the reference budget. The original samples come from the [RATM dataset, v3.0.0](https://github.com/tii-racing/drone-racing-dataset/releases/tag/v3.0.0) (CC BY 4.0).
+
+[![Try the interactive RATM 12p 3D replay](docs/preview.png)](https://ghghgh0001.github.io/Replay-Aware-Trajectory-Compression/)
