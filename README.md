@@ -8,22 +8,52 @@ The prepublication distribution provides executables for Windows x64 and Ubuntu 
 
 ## Setup
 
-Download the runtime for your platform from [Releases](../../releases) and extract it in the directory containing this README. Keep the entire `runtime` directory together.
+Open [Release v0.1.0](https://github.com/ghghgh0001/Replay-Aware-Trajectory-Compression/releases/tag/v0.1.0). Under **Assets**, download [github-repository.zip](https://github.com/ghghgh0001/Replay-Aware-Trajectory-Compression/releases/download/v0.1.0/github-repository.zip) and the runtime for your platform. The helper ZIP contains the scripts and viewer template. Both packages must be extracted into the same folder, with `demo.py` next to the `runtime/` and `assets/` directories.
 
 | Platform | Release asset | Executable |
 | --- | --- | --- |
 | Windows x64 | `rata-engine-windows-x64.zip` | `runtime/rata-engine.exe` |
 | Ubuntu 22.04 x86-64 | `rata-engine-ubuntu-22.04-x86_64.tar.gz` | `runtime/rata-engine` |
 
-Use Python 3.11 or later for the download and demo scripts. On Ubuntu 22.04, Python 3.10 as installed by the distribution also supports these scripts. The runtime itself has its own Python dependencies.
+Use Python 3.11 or later on Windows. The default Python 3.10 on Ubuntu 22.04 is also supported. The executable bundles its own runtime dependencies. The commands below install only the dependencies for the helper scripts.
+
+**Windows x64.** Open PowerShell in the folder holding the downloaded ZIP files.
 
 ```powershell
+Expand-Archive github-repository.zip -DestinationPath run
+Expand-Archive rata-engine-windows-x64.zip -DestinationPath run
+Set-Location run
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
+.\runtime\rata-engine.exe --help
+```
+
+If PowerShell blocks activation, use `.\.venv\Scripts\python.exe` in place of `python` for the remaining commands.
+
+**Ubuntu 22.04 x86-64.** Open a terminal in the download folder. If needed, install `python3-venv` and `unzip` using the Ubuntu package manager.
+
+```bash
+mkdir run
+unzip github-repository.zip -d run
+tar -xzf rata-engine-ubuntu-22.04-x86_64.tar.gz -C run
+cd run
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install -r requirements.txt
+./runtime/rata-engine --help
+```
+
+To verify the downloads, compare their SHA-256 digests with [SHA256SUMS.txt](https://github.com/ghghgh0001/Replay-Aware-Trajectory-Compression/releases/download/v0.1.0/SHA256SUMS.txt). Use `Get-FileHash -Algorithm SHA256` in PowerShell or `sha256sum` on Ubuntu.
+
+### Download the demo flight
+
+```powershell
 python datasets.py list
 python datasets.py download ntu-viral eee_03
 ```
 
-On Ubuntu, extract the runtime with `tar -xzf rata-engine-ubuntu-22.04-x86_64.tar.gz`. Create and activate a Python environment with `python3 -m venv .venv && source .venv/bin/activate`, then use the same commands. Install the Ubuntu package `python3-venv` if the venv module is absent.
+The download writes `data/ntu-viral/eee_03.csv`, with timestamps in seconds and coordinates in meters.
 
 The download script retrieves the original trajectory from its provider and checks the SHA-256 against the paper manifest before writing a local `t,x,y,z` CSV. The catalog includes 30 RATM flights, two NeuroBEM Vicon records, and 16 NTU VIRAL Leica prism records. Timestamp differences are converted to seconds, and positions are in meters. If an upstream server or proxy does not support ZIP range requests, obtain the specified source member from the provider and pass it to `datasets.py download ... --local-original PATH`.
 
@@ -58,6 +88,8 @@ To try your own flight, replace `--dataset ... --trajectory ...` with `--input y
 
 By default each successful run writes `archive.rata`, `result.json`, and `replay.html`. The comparison page shows original sample markers from the input and a separate curve sampled from the decoder. Drag to rotate the 3D path, scroll or pinch to zoom, and shift-drag to pan. Use **Reset view** to return to the initial framing. The time slider and playback button update both plots. Samples ahead of the cursor appear as unconnected hollow markers. Played samples are filled, and the solid replay curve extends up to the cursor. Reported RMS values come from continuous scoring against the quintic reference built from the original samples. The option `--speed-rms-mps` bounds the RMS norm of the **velocity vector error**. Archive bytes include the full container and all decoding information.
 
+The two `eee_03` commands above should produce archives within 15,324 bytes, with continuous position RMS at most 4 mm and velocity RMS at most 0.1 m/s. One Windows run produced 15,324 bytes in each mode, with position and velocity RMS of 2.517 mm and 0.0843 m/s for RATA and 2.918 mm and 0.0977 m/s for point-only. Open `demo-rata/replay.html` and `demo-point/replay.html` in a browser.
+
 If no file qualifies, the command exits with code `2` and records the solver outcome in `result.json`. Status `0` denotes completion of the arithmetic graph search, `1` a solver limit, and `2` proof of infeasibility within that arithmetic graph or an insufficient cap for its fixed overhead. The final archive also passes the decoded byte, RMS, and local checks. Encoding builds candidates from the input and can take several minutes on long or fragmented records.
 
 ## Verify encoding, decoding, and error independently
@@ -74,14 +106,24 @@ The generated `decoded-flight/decoded.csv` has the original `t,x,y,z` format wit
 3. To measure the reconstruction error yourself, supply the actual path of the original CSV and the decoded CSV. This command uses only those two files and runs without the engine.
 
 ```powershell
-python demo.py compare --input "D:/your-data/eee_03.csv" --decoded decoded-flight/decoded.csv --output compared-flight
+python demo.py compare --input data/ntu-viral/eee_03.csv --decoded decoded-flight/decoded.csv --output compared-flight
 ```
+
+If you moved the original CSV, replace the `--input` path with its current location.
 
 The comparison requires matching sample counts and timestamps within 10 nanoseconds. It reports the position root-mean-square error and maximum three-dimensional position error over those samples, plus the maximum timestamp difference, in `compared-flight/comparison.json`. The encoding report separately measures replay between samples, using position and velocity against the paper's continuous reference.
 
 ## Query specific times
 
 Create `times.csv` with header `t` and one query time in seconds per row, relative to the first input sample.
+
+```csv
+t
+0.01
+50
+100
+149
+```
 
 ```powershell
 runtime\rata-engine.exe query demo-rata\archive.rata times.csv decoded.csv
