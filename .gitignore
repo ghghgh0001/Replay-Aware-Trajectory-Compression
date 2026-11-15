@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+data/
+runtime/
+demo-*/
+decoded-*/
+compared-*/
+*.rata
+*.zip
