@@ -132,3 +132,5 @@ runtime\rata-engine.exe query demo-rata\archive.rata times.csv decoded.csv
 On Ubuntu, run `./runtime/rata-engine query demo-rata/archive.rata times.csv decoded.csv`.
 
 This returns `t,x,y,z,vx,vy,vz`. If the requested batch includes a time outside continuous support, the command exits with an error before writing the output CSV.
+
+[![Try the interactive RATA 3D replay](docs/preview.png)](https://ghghgh0001.github.io/Replay-Aware-Trajectory-Compression/)
