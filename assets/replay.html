@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trajectory replay</title>
+<style>
+:root{font:16px/1.45 'Instrument Sans',system-ui,sans-serif;color:#172733;background:#f2f5f7;--panel:#fff;--line:#d7e1e7;--blue:#126d82;--rust:#a64b2a}
+*{box-sizing:border-box}main{max-width:1120px;margin:auto;padding:32px 18px 48px}h1{font-size:clamp(1.5rem,3vw,2.25rem);margin:0}p{margin:.5rem 0}.sub{color:#46616e}.metrics,.graphs{display:grid;gap:12px;margin-top:18px}.metrics{grid-template-columns:repeat(3,1fr)}.graphs{grid-template-columns:1fr 1fr;margin-top:12px}.metric,.panel,.controls{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}.metric strong{display:block;font-size:1.3rem}.controls{margin-top:12px}button,select{font:inherit;background:#fff;border:1px solid #a9bcc7;border-radius:6px;color:inherit;padding:5px 10px}button{cursor:pointer}button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #126d82;outline-offset:3px}.row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.track{flex:1;min-width:140px;accent-color:var(--blue)}.time{min-width:80px;font-variant-numeric:tabular-nums}.panel h2{font-size:1rem;margin:0 0 8px}canvas{width:100%;height:330px;display:block}#clock{height:220px}.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.9rem}.legend i{width:.7em;height:.7em;border-radius:50%;display:inline-block;margin-right:5px}.original{background:var(--rust)}.replay{background:var(--blue)}output{display:block;margin-top:8px;color:#46616e;min-height:1.5em}@media(max-width:700px){main{padding-top:18px}.graphs{grid-template-columns:1fr}.metrics{gap:6px}.metric{padding:8px}.metric small{font-size:.75rem}.metric strong{font-size:1rem}}
+.graphs { grid-template-columns:minmax(0, 1.55fr) minmax(0, 1fr); }
+.panel { min-width:0; }
+.panel .row h2 { margin:0; }
+.path-tools { margin-left:auto; display:flex; align-items:center; flex-wrap:wrap; gap:6px; }
+#path { height:clamp(340px,50vh,500px); margin:12px 0; background:#f7fafb; border-radius:6px;
+  cursor:grab; touch-action:none; outline-offset:2px; }
+#path:active { cursor:grabbing; }
+#path:focus-visible { outline:3px solid var(--blue); }
+#clock { margin-top:12px; height:280px; }
+#zoom-level { min-width:3.5rem; text-align:right; font-variant-numeric:tabular-nums; }
+.help { color:#46616e; font-size:.85rem; }
+.legend .line { width:1.4em; height:0; border-radius:0; background:none; border-top:2px solid currentColor; vertical-align:middle; }
+.legend .hollow { background:none; border:1px solid currentColor; }
+.legend label { cursor:pointer; }
+.legend input { accent-color:var(--blue); vertical-align:middle; }
+@media(max-width:800px) { .graphs { grid-template-columns:minmax(0,1fr); } .path-tools { margin-left:0; } }
+</style></head>
+<body><main>
+<header><h1 id="title">Trajectory replay</h1><p class="sub" id="record"></p><p class="sub" id="provenance"></p></header>
+<section class="metrics" aria-label="Archive metrics">
+<div class="metric"><small>Archive</small><strong id="bytes"></strong><small id="cap"></small></div>
+<div class="metric"><small>Position RMS</small><strong id="position"></strong><small id="position-limit"></small></div>
+<div class="metric"><small>Velocity RMS</small><strong id="speed"></strong><small id="speed-limit"></small></div>
+</section>
+<section class="controls" aria-label="Replay controls">
+<div class="row"><button id="play" type="button">Play</button><label for="time">Time</label><input class="track" id="time" type="range" min="0" value="0" step="any"><span class="time" id="readout"></span></div>
+<output id="at-time"></output>
+</section>
+<section class="graphs">
+<div class="panel">
+  <div class="row">
+    <h2>3D flight path</h2>
+    <div class="path-tools">
+      <label for="plane">View</label>
+      <select id="plane"><option value="3d">3D</option><option value="0,1">XY</option><option value="0,2">XZ</option><option value="1,2">YZ</option></select>
+      <button id="zoom-out" type="button" aria-label="Zoom out">−</button>
+      <button id="zoom-in" type="button" aria-label="Zoom in">+</button>
+      <span id="zoom-level" aria-label="Zoom level"></span>
+      <button id="reset-view" type="button">Reset view</button>
+    </div>
+  </div>
+  <canvas id="path" tabindex="0" aria-label="Interactive 3D flight path" aria-describedby="camera-help"></canvas>
+  <div class="legend">
+    <label id="legend-original"><input type="checkbox" id="show-original" checked> <i class="original"></i>Original samples</label>
+    <span><i class="replay"></i>Decoded replay</span>
+    <span><i class="line"></i>Played</span><span><i class="hollow"></i>Ahead</span>
+  </div>
+  <p class="help" id="camera-help">Drag to rotate. Scroll or pinch to zoom. Shift-drag to pan. With the plot focused, use the arrow keys or + and −.</p>
+</div>
+<div class="panel"><div class="row"><h2>Coordinate over time</h2><label for="axis">Coordinate</label><select id="axis"><option value="0">X</option><option value="1">Y</option><option value="2">Z</option></select></div><canvas id="clock" aria-label="Coordinate over time"></canvas><p class="sub">Use the time slider to inspect the decoded position and speed. Gaps in the recording remain blank.</p></div>
+</section>
+</main>
+<script type="application/json" id="data"><!--REPLAY_DATA--></script>
+<script>
+'use strict';
+const {label,report,series:runs}=JSON.parse(document.getElementById('data').textContent);
+const byId=id=>document.getElementById(id), put=(id,value)=>{byId(id).textContent=value;};
+const blue='#126d82', red='#a64b2a', axes='XYZ';
+const slider=byId('time'), plane=byId('plane'), axis=byId('axis'), toggle=byId('play');
+const comparison=Boolean(report.mode);
+const series=runs.map(run=>({original_t:[],original_p:[],...run,times:comparison?run.original_t:run.replay_t}));
+const last=series.at(-1).times.at(-1);
+slider.max=last;
+put('record',label);
+put('bytes',report.bytes.toLocaleString()+' B');
+byId('legend-original').hidden=!comparison;
+if(comparison){
+  put('title',report.mode==='rata'?'RATA trajectory replay':'Point-only trajectory replay');
+  put('provenance','The decoder supplies the replay curve. The input file supplies the original sample markers.');
+  put('cap','Limit '+report.limits.max_bytes.toLocaleString()+' B');
+  put('position',(report.position_rms_m*1000).toFixed(3)+' mm');put('position-limit','Limit '+(report.limits.position_rmse_m*1000)+' mm');
+  put('speed',report.speed_rms_mps.toFixed(4)+' m/s');put('speed-limit','Limit '+report.limits.velocity_rmse_mps+' m/s');
+}else{
+  put('title','Archive-only replay');
+  put('provenance','The decoder reads the saved archive for all positions, velocities, and sampling times shown here.');
+  byId('position').closest('.metric').hidden=true;
+  byId('speed').closest('.metric').hidden=true;
+}
+function bracket(times,t){
+  if(!times.length||t<times[0]||t>times.at(-1))return null;
+  let lo=0, hi=times.length-1;
+  while(hi-lo>1){const mid=(lo+hi)>>1;if(times[mid]<=t)lo=mid;else hi=mid;}
+  return [lo,hi,hi===lo?0:(t-times[lo])/(times[hi]-times[lo])];
+}
+const path = byId('path'), clock = byId('clock');
+const extent = Array.from({length:3}, () => [Infinity,-Infinity]);
+for (const run of series) {
+  for (const points of [run.original_p,run.replay_p]) {
+    for (const point of points) {
+      for (let i=0;i<3;i++) {
+        extent[i][0]=Math.min(extent[i][0],point[i]);
+        extent[i][1]=Math.max(extent[i][1],point[i]);
+      }
+    }
+  }
+}
+const center=extent.map(([lo,hi])=>(lo+hi)/2);
+const diameter=Math.hypot(...extent.map(([lo,hi])=>hi-lo))||1;
+const views={'3d':[.7,.58],'0,1':[0,Math.PI/2],'0,2':[0,0],'1,2':[-Math.PI/2,0]};
+const camera={yaw:views['3d'][0], pitch:views['3d'][1], zoom:1, x:0, y:0};
+let pathCache, clockCache;
+
+function frame(canvas) {
+  const {width,height}=canvas.getBoundingClientRect(), scale=window.devicePixelRatio||1;
+  const w=Math.round(width*scale), h=Math.round(height*scale);
+  if (canvas.width!==w || canvas.height!==h) {
+    canvas.width=w;
+    canvas.height=h;
+  }
+  const ctx=canvas.getContext('2d');
+  ctx.setTransform(scale,0,0,scale,0,0);
+  ctx.clearRect(0,0,width,height);
+  return {ctx,width,height};
+}
+
+function segment(ctx,a,b) {
+  ctx.beginPath();
+  ctx.moveTo(...a);
+  ctx.lineTo(...b);
+  ctx.stroke();
+}
+
+function projection(frame) {
+  const {width,height}=frame;
+  const c=Math.cos(camera.yaw), s=Math.sin(camera.yaw);
+  const up=Math.sin(camera.pitch), vertical=Math.cos(camera.pitch);
+  const scale=.94*Math.min(width,height)*camera.zoom/diameter;
+  const direction=([x,y,z])=>[c*x-s*y,-(up*(s*x+c*y)+vertical*z)];
+  const project=point=>{
+    const [x,y]=direction(point.map((v,i)=>v-center[i]));
+    return [width/2+camera.x+x*scale,height/2+camera.y+y*scale];
+  };
+  return {project,direction,scale};
+}
+
+function showOrientation({ctx,width,height}, {direction,scale}) {
+  ctx.font='11px system-ui';
+  ctx.lineWidth=1.4;
+  ctx.textAlign='center';
+  ctx.textBaseline='middle';
+  const colors=['#9b493c','#47754f','#41699b'];
+  for (let i=0;i<3;i++) {
+    const vector=[0,0,0];
+    vector[i]=1;
+    const [x,y]=direction(vector);
+    if (Math.hypot(x,y)<.05) continue;
+    ctx.strokeStyle=ctx.fillStyle=colors[i];
+    segment(ctx,[42,height-38],[42+x*24,height-38+y*24]);
+    ctx.fillText(axes[i],42+x*34,height-38+y*34);
+  }
+  const order=10**Math.floor(Math.log10(72/scale));
+  const length=([5,2,1].find(multiplier=>multiplier*order*scale<=72)??1)*order;
+  const end=width-17, base=height-17;
+  ctx.strokeStyle=ctx.fillStyle='#46616e';
+  segment(ctx,[end-length*scale,base],[end,base]);
+  ctx.fillText(Number(length.toPrecision(2))+' m',end-length*scale/2,base-9);
+}
+
+function drawGround(ctx,project) {
+  const [[x0,x1],[y0,y1],[z]]=extent;
+  ctx.strokeStyle='#dce7ec';
+  ctx.lineWidth=.8;
+  for (let i=0;i<=5;i++) {
+    const x=x0+(x1-x0)*i/5, y=y0+(y1-y0)*i/5;
+    segment(ctx,project([x,y0,z]),project([x,y1,z]));
+    segment(ctx,project([x0,y,z]),project([x1,y,z]));
+  }
+}
+
+function pointsFor(project) {
+  return series.map(run=>({
+    original:run.original_p.map((p,i)=>project(p,run.original_t[i])),
+    replay:run.replay_p.map((p,i)=>project(p,run.replay_t[i])),
+  }));
+}
+
+function plotTime({ctx,width,height}, k) {
+  const [min,max]=extent[k], margin=(max-min)*.06||.01;
+  const low=min-margin, high=max+margin, duration=last||1;
+  const left=49, top=17, w=Math.max(25,width-left-17), h=height-top-43;
+  const x=t=>left+w*t/duration, y=v=>top+h*(high-v)/(high-low);
+  ctx.font='11px system-ui';
+  ctx.textBaseline='alphabetic';
+  ctx.fillStyle='#46616e';
+  ctx.strokeStyle='#e1e8ed';
+  ctx.lineWidth=1;
+  for (let i=0;i<=4;i++) {
+    const t=duration*i/4, v=low+(high-low)*i/4;
+    segment(ctx,[x(t),top],[x(t),top+h]);
+    segment(ctx,[left,y(v)],[left+w,y(v)]);
+    ctx.textAlign='center';
+    ctx.fillText(t.toFixed(1),x(t),top+h+15);
+    ctx.textAlign='right';
+    ctx.fillText(v.toFixed(1),left-6,y(v)+4);
+  }
+  ctx.textAlign='center';
+  ctx.fillText('Time (s)',left+w/2,height-6);
+  ctx.save();
+  ctx.translate(11,top+h/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.fillText(axes[k]+' (m)',0,0);
+  ctx.restore();
+  return {project:(p,t)=>[x(t),y(p[k])],x,top,h};
+}
+
+function playedSamples(times,time) {
+  let lo=0, hi=times.length;
+  while (lo<hi) {
+    const middle=(lo+hi)>>1;
+    if (times[middle]<=time) lo=middle+1;
+    else hi=middle;
+  }
+  return lo;
+}
+
+function interpolate(a,b,weight) {
+  return a.map((value,i)=>value+(b[i]-value)*weight);
+}
+
+function replayLine(ctx,points,times,played,time) {
+  if (!played || points.length<2) return;
+  const lastPlayed=played-1;
+  const endsBetweenSamples=played<points.length && time>times[lastPlayed];
+  if (played<2 && !endsBetweenSamples) return;
+  ctx.strokeStyle=blue;
+  ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(...points[0]);
+  for (let i=1;i<played;i++) ctx.lineTo(...points[i]);
+  if (endsBetweenSamples) {
+    const weight=(time-times[lastPlayed])/(times[played]-times[lastPlayed]);
+    ctx.lineTo(...interpolate(points[lastPlayed],points[played],weight));
+  }
+  ctx.stroke();
+}
+
+function samples(ctx,points,first,end,color,radius,filled,spacing=7) {
+  if (first>=end) return;
+  ctx.beginPath();
+  let prevX=Infinity, prevY=Infinity;
+  for (let i=first;i<end;i++) {
+    const [x,y]=points[i];
+    // Keep individual markers legible at the current zoom.
+    if ((x-prevX)**2+(y-prevY)**2<spacing**2) continue;
+    ctx.moveTo(x+radius,y);
+    ctx.arc(x,y,radius,0,Math.PI*2);
+    prevX=x;
+    prevY=y;
+  }
+  if (filled) {
+    ctx.fillStyle=color;
+    ctx.fill();
+  } else {
+    ctx.strokeStyle=color;
+    ctx.lineWidth=.8;
+    ctx.stroke();
+  }
+}
+
+function drawSeries(ctx,projected,counts,time,showOriginal) {
+  for (let i=0;i<series.length;i++) {
+    const run=series[i], {original,replay}=projected[i], count=counts[i];
+    if (run.replay_v===null) {
+      samples(ctx,replay,count.replay,replay.length,blue,2.7,false,0);
+      samples(ctx,replay,0,count.replay,blue,2.7,true,0);
+    } else {
+      replayLine(ctx,replay,run.replay_t,count.replay,time);
+      if (!comparison) samples(ctx,replay,count.replay,replay.length,'#608b9c',1.6,false);
+    }
+    if (showOriginal) {
+      samples(ctx,original,count.original,original.length,'#9f6a56',1.9,false);
+      samples(ctx,original,0,count.original,red,1.9,true);
+    }
+  }
+}
+
+function marker(ctx,[x,y],color,filled,radius=4) {
+  ctx.beginPath();
+  ctx.arc(x,y,radius,0,Math.PI*2);
+  if (filled) {
+    ctx.fillStyle=color;
+    ctx.fill();
+  }
+  ctx.strokeStyle=filled?'#fff':color;
+  ctx.lineWidth=1.5;
+  ctx.stroke();
+}
+
+function playhead() {
+  // Browsers can round the range value to slightly below its maximum.
+  const value=slider.valueAsNumber;
+  return Math.abs(last-value)<1e-9?last:value;
+}
+
+function draw() {
+  const time=playhead(), k=Number(axis.value);
+  put('readout',time.toFixed(3)+' s');
+  put('zoom-level',Math.round(100*camera.zoom)+'%');
+  const spatial=frame(path), chart=frame(clock);
+  const view=projection(spatial), timeline=plotTime(chart,k);
+  const pathKey=[spatial.width,spatial.height,camera.yaw,camera.pitch,camera.zoom,camera.x,camera.y].join(',');
+  const clockKey=[chart.width,chart.height,k].join(',');
+  if (pathCache?.key!==pathKey) pathCache={key:pathKey,points:pointsFor(view.project)};
+  if (clockCache?.key!==clockKey) clockCache={key:clockKey,points:pointsFor(timeline.project)};
+  const counts=series.map(run=>({original:playedSamples(run.original_t,time),replay:playedSamples(run.replay_t,time)}));
+  const showOriginal=comparison && byId('show-original').checked;
+  drawGround(spatial.ctx,view.project);
+  drawSeries(spatial.ctx,pathCache.points,counts,time,showOriginal);
+  drawSeries(chart.ctx,clockCache.points,counts,time,showOriginal);
+  showOrientation(spatial,view);
+  const x=timeline.x(time);
+  chart.ctx.strokeStyle='#293943';
+  chart.ctx.lineWidth=1;
+  segment(chart.ctx,[x,timeline.top],[x,timeline.top+timeline.h]);
+
+  const run=series.find(item=>time>=item.times[0] && time<=item.times.at(-1));
+  if (run?.replay_v===null) {
+    put('at-time','Short interval with stored positions only.');
+    return;
+  }
+  const span=run&&bracket(run.replay_t,time);
+  if (!span) {
+    put('at-time',run?'Continuous replay is unavailable at this time.':'No recording at this time.');
+    return;
+  }
+  const [lo,hi,weight]=span;
+  const p=interpolate(run.replay_p[lo],run.replay_p[hi],weight);
+  const speed=Math.hypot(...interpolate(run.replay_v[lo],run.replay_v[hi],weight));
+  const original=showOriginal&&bracket(run.original_t,time);
+  let sampleLabel='';
+  if (original) {
+    const [l,h,w]=original, n=w<.5?l:h, q=run.original_p[n], t=run.original_t[n];
+    marker(spatial.ctx,view.project(q),red,t<=time,6);
+    marker(chart.ctx,timeline.project(q,t),red,t<=time,6);
+    sampleLabel=` · displayed original sample at ${t.toFixed(3)} s`;
+  }
+  marker(spatial.ctx,view.project(p),blue,true);
+  marker(chart.ctx,timeline.project(p,time),blue,true);
+  put('at-time',`Decoded XYZ (${p.map(value=>value.toFixed(3)).join(', ')}) m · speed ${speed.toFixed(3)} m/s${sampleLabel}`);
+}
+
+function setView(name) {
+  [camera.yaw,camera.pitch]=views[name];
+  camera.zoom=1;
+  camera.x=camera.y=0;
+  plane.value=name;
+  draw();
+}
+
+function rotate(dx,dy) {
+  plane.value='3d';
+  camera.yaw+=dx*.008;
+  camera.pitch=Math.max(-Math.PI/2,Math.min(Math.PI/2,camera.pitch+dy*.008));
+}
+
+function zoomBy(factor,x=path.clientWidth/2,y=path.clientHeight/2) {
+  const zoom=Math.max(.2,Math.min(128,camera.zoom*factor));
+  const change=zoom/camera.zoom-1;
+  camera.x+=(path.clientWidth/2+camera.x-x)*change;
+  camera.y+=(path.clientHeight/2+camera.y-y)*change;
+  camera.zoom=zoom;
+}
+
+const pointers=new Map();
+path.addEventListener('pointerdown',event=>{
+  pointers.set(event.pointerId,[event.clientX,event.clientY]);
+  path.setPointerCapture(event.pointerId);
+});
+path.addEventListener('pointermove',event=>{
+  const previous=pointers.get(event.pointerId);
+  if (!previous) return;
+  const point=[event.clientX,event.clientY], dx=point[0]-previous[0], dy=point[1]-previous[1];
+  pointers.set(event.pointerId,point);
+  const other=[...pointers.entries()].find(([id])=>id!==event.pointerId);
+  if (other) {
+    const [,anchor]=other, bounds=path.getBoundingClientRect();
+    const distance=Math.hypot(previous[0]-anchor[0],previous[1]-anchor[1]);
+    if (distance>0) {
+      const factor=Math.hypot(point[0]-anchor[0],point[1]-anchor[1])/distance;
+      camera.x+=dx/2;
+      camera.y+=dy/2;
+      zoomBy(factor,(point[0]+anchor[0])/2-bounds.left,(point[1]+anchor[1])/2-bounds.top);
+    }
+  } else if (event.shiftKey || event.buttons&6) {
+    camera.x+=dx;
+    camera.y+=dy;
+  } else {
+    rotate(dx,dy);
+  }
+  draw();
+});
+for (const name of ['pointerup','pointercancel','lostpointercapture']) {
+  path.addEventListener(name,event=>pointers.delete(event.pointerId));
+}
+path.addEventListener('contextmenu',event=>event.preventDefault());
+path.addEventListener('wheel',event=>{
+  event.preventDefault();
+  const bounds=path.getBoundingClientRect(), units=event.deltaMode===1?16:event.deltaMode===2?bounds.height:1;
+  zoomBy(Math.exp(-event.deltaY*units*.0017),event.clientX-bounds.left,event.clientY-bounds.top);
+  draw();
+},{passive:false});
+const rotationKeys={ArrowLeft:[-16,0],ArrowRight:[16,0],ArrowUp:[0,16],ArrowDown:[0,-16]};
+path.addEventListener('keydown',event=>{
+  const rotation=rotationKeys[event.key];
+  if (rotation) rotate(...rotation);
+  else if (event.key==='+' || event.key==='=') zoomBy(1.25);
+  else if (event.key==='-') zoomBy(.8);
+  else return;
+  event.preventDefault();
+  draw();
+});
+byId('zoom-in').addEventListener('click',()=>{zoomBy(1.25);draw();});
+byId('zoom-out').addEventListener('click',()=>{zoomBy(.8);draw();});
+byId('reset-view').addEventListener('click',()=>setView('3d'));
+plane.addEventListener('change',()=>setView(plane.value));
+
+let animation=null, previous=0;
+function pause() {
+  cancelAnimationFrame(animation);
+  animation=null;
+  toggle.textContent='Play';
+}
+function animate(now) {
+  if (previous) slider.value=Math.min(last,Number(slider.value)+(now-previous)/1000);
+  previous=now;
+  draw();
+  if (playhead()>=last) pause();
+  else animation=requestAnimationFrame(animate);
+}
+toggle.addEventListener('click',()=>{
+  if (animation!==null) {pause();return;}
+  if (playhead()>=last) slider.value=0;
+  previous=0;
+  toggle.textContent='Pause';
+  animation=requestAnimationFrame(animate);
+});
+for (const input of [slider,axis,byId('show-original')]) input.addEventListener('input',draw);
+window.addEventListener('resize',draw);
+draw();
+</script></body></html>

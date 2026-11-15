@@ -1,0 +1,200 @@
+{
+  "ratm": {
+    "01a": {
+      "member": "autonomous/flight-01a-ellipse/csv_raw/mocap_flight-01a-ellipse.csv",
+      "sha256": "503653520db2e849eff26706ad340922c20e1766ffa5807067c51abbbc98964c"
+    },
+    "01p": {
+      "member": "piloted/flight-01p-ellipse/csv_raw/mocap_flight-01p-ellipse.csv",
+      "sha256": "50014dcdcbe77fddbe18d0342115f39412741b1299d8c52122dacdfa99ae6b3d"
+    },
+    "02a": {
+      "member": "autonomous/flight-02a-ellipse/csv_raw/mocap_flight-02a-ellipse.csv",
+      "sha256": "2218f33c52a9f3546dfa1377e01dab2aaeaf81d8b873168a70637bc6c7021050"
+    },
+    "02p": {
+      "member": "piloted/flight-02p-ellipse/csv_raw/mocap_flight-02p-ellipse.csv",
+      "sha256": "ddf13be0773c3ce4e181540f4e6546ec8b6949692b3bee8fb9a7b33a962ae6f8"
+    },
+    "03a": {
+      "member": "autonomous/flight-03a-ellipse/csv_raw/mocap_flight-03a-ellipse.csv",
+      "sha256": "1403d5ca82e882a4730b9b6357ad0d08d14ed5cc5cdc87ad3110a036c417eba8"
+    },
+    "03p": {
+      "member": "piloted/flight-03p-ellipse/csv_raw/mocap_flight-03p-ellipse.csv",
+      "sha256": "0aed59d63ef8f3f5a3918076736f427f90499f698136eb7391193471b477fdb6"
+    },
+    "04a": {
+      "member": "autonomous/flight-04a-ellipse/csv_raw/mocap_flight-04a-ellipse.csv",
+      "sha256": "31db358ecb51bffc171cc0d8668111f365dd1b2022f7d73b07f313bafdaa360e"
+    },
+    "05a": {
+      "member": "autonomous/flight-05a-ellipse/csv_raw/mocap_flight-05a-ellipse.csv",
+      "sha256": "418bfcf029f5637b4488f95eadebaec026d3c2528d15045f88ff29800cc501e4"
+    },
+    "06a": {
+      "member": "autonomous/flight-06a-ellipse/csv_raw/mocap_flight-06a-ellipse.csv",
+      "sha256": "9d7b59cb46dd71802a7e1adc76f0f2a46a3df1c3a4ff73f4bd20d9e3fb89c7c4"
+    },
+    "06p": {
+      "member": "piloted/flight-06p-ellipse/csv_raw/mocap_flight-06p-ellipse.csv",
+      "sha256": "9352ea5b1da29fce1c494543696ac9f9c318c48f22b6571b777acfc95b39b3ed"
+    },
+    "07a": {
+      "member": "autonomous/flight-07a-lemniscate/csv_raw/mocap_flight-07a-lemniscate.csv",
+      "sha256": "3fd2f2d3e970cbde101ebafa043c6b812f95465fa80d8a82ae7c48cde694c6b8"
+    },
+    "07p": {
+      "member": "piloted/flight-07p-lemniscate/csv_raw/mocap_flight-07p-lemniscate.csv",
+      "sha256": "7ace100aca4d44eebff03fb9a6f24d19e1dfd93c1dabf388313e17be9ea8318f"
+    },
+    "08a": {
+      "member": "autonomous/flight-08a-lemniscate/csv_raw/mocap_flight-08a-lemniscate.csv",
+      "sha256": "3d4f93d038d81a25bbc058c543a2b0ab312e74dc291b8af5f841bc101757f754"
+    },
+    "09a": {
+      "member": "autonomous/flight-09a-lemniscate/csv_raw/mocap_flight-09a-lemniscate.csv",
+      "sha256": "821a08f74c88a237f6d70be9b2d3db09946e952db188b707bf68c697a46cfed7"
+    },
+    "09p": {
+      "member": "piloted/flight-09p-lemniscate/csv_raw/mocap_flight-09p-lemniscate.csv",
+      "sha256": "1fe42e17bfdfdc62c88045cc2712d080ab09da6f3f59b122a6a20e298938974e"
+    },
+    "10a": {
+      "member": "autonomous/flight-10a-lemniscate/csv_raw/mocap_flight-10a-lemniscate.csv",
+      "sha256": "2039518a262f51431baaf28f7f3324eb67c35f9b57a93e9e6c81958674fbdacf"
+    },
+    "10p": {
+      "member": "piloted/flight-10p-lemniscate/csv_raw/mocap_flight-10p-lemniscate.csv",
+      "sha256": "c9a27085fa3e8405d57b4ea507e8af798db4fa2167e12ae4193aace30bcfe8f8"
+    },
+    "11a": {
+      "member": "autonomous/flight-11a-lemniscate/csv_raw/mocap_flight-11a-lemniscate.csv",
+      "sha256": "4f25f4e95c830bcf99b689f07f3646e964d6a89efbac5915e48a98bcd7458a32"
+    },
+    "12a": {
+      "member": "autonomous/flight-12a-lemniscate/csv_raw/mocap_flight-12a-lemniscate.csv",
+      "sha256": "79a7510d72fbeb81b9d79af5ee2e7c74c4b92bb5f9158d01b609436bf2eccefb"
+    },
+    "12p": {
+      "member": "piloted/flight-12p-lemniscate/csv_raw/mocap_flight-12p-lemniscate.csv",
+      "sha256": "0958f008c69b30982f3f258f24a7c99ad2e38c5a9d75632a0797262d4fe32e19"
+    },
+    "13a": {
+      "member": "autonomous/flight-13a-trackRATM/csv_raw/mocap_flight-13a-trackRATM.csv",
+      "sha256": "ff246689f014f966b49045075d53a16044a1e433e5139938c05f2048d238d7e4"
+    },
+    "13p": {
+      "member": "piloted/flight-13p-trackRATM/csv_raw/mocap_flight-13p-trackRATM.csv",
+      "sha256": "0de7061213e533db1f9d61b68c33c2937a5bfb8f865272b51b39b89287003249"
+    },
+    "14a": {
+      "member": "autonomous/flight-14a-trackRATM/csv_raw/mocap_flight-14a-trackRATM.csv",
+      "sha256": "e601f93fe0fb36af5af4f996b7d1c29ab9008f5688cbdaa172de38db88107f60"
+    },
+    "14p": {
+      "member": "piloted/flight-14p-trackRATM/csv_raw/mocap_flight-14p-trackRATM.csv",
+      "sha256": "14b1c8ff9692ee02951c011e9bc94afe5663111c035b6711779a2558597b3c9e"
+    },
+    "15a": {
+      "member": "autonomous/flight-15a-trackRATM/csv_raw/mocap_flight-15a-trackRATM.csv",
+      "sha256": "0e736977230ac162d94f968da1fbdc86c5dc6dd1d245f984d4604cfeee0059a4"
+    },
+    "16a": {
+      "member": "autonomous/flight-16a-trackRATM/csv_raw/mocap_flight-16a-trackRATM.csv",
+      "sha256": "971d456b9ff929c1b22172671e959c97320db90d7d378821542f24d9695b53ae"
+    },
+    "16p": {
+      "member": "piloted/flight-16p-trackRATM/csv_raw/mocap_flight-16p-trackRATM.csv",
+      "sha256": "a81aeddb1d7b66590ec406702814ab0baff85f7aaba4c7f9b1351fdf9de57763"
+    },
+    "17a": {
+      "member": "autonomous/flight-17a-trackRATM/csv_raw/mocap_flight-17a-trackRATM.csv",
+      "sha256": "20394439e6c73761cdbe98084881cd836534bfd13401c0fc1c5c81c8915eac5c"
+    },
+    "17p": {
+      "member": "piloted/flight-17p-trackRATM/csv_raw/mocap_flight-17p-trackRATM.csv",
+      "sha256": "37647909723e3a19d6cf0b4b07c326915f36fb82f81f89400860db74000af13f"
+    },
+    "18a": {
+      "member": "autonomous/flight-18a-trackRATM/csv_raw/mocap_flight-18a-trackRATM.csv",
+      "sha256": "37d46cb9828e28b91ca313614e07890f2f0d9022b41f83a2bdbf8206c41a80d0"
+    }
+  },
+  "neurobem": {
+    "2021-02-03-13-43-38": {
+      "member": "raw_data/2021-02-03-13-43-38.bag",
+      "sha256": "e17c3778e55d5c759623663a40305d5dfc7faf96096a969d0a47bab7b78240db"
+    },
+    "2021-02-03-13-44-49": {
+      "member": "raw_data/2021-02-03-13-44-49.bag",
+      "sha256": "63e0a2b7b5713d20509386469d54d954fe6df026699aa26000717d106b37bd4a"
+    }
+  },
+  "ntu-viral": {
+    "eee_01": {
+      "member": "eee_01/ground_truth.csv",
+      "sha256": "2c0d8145c7f3ed4fa47e28da8ff412cbf9c1e77f4517e738192ec214429e0403"
+    },
+    "eee_02": {
+      "member": "eee_02/ground_truth.csv",
+      "sha256": "3fdb02d350894f1604c4f9585f9877460b5588b490e912a73ad45c8a91569170"
+    },
+    "eee_03": {
+      "member": "eee_03/ground_truth.csv",
+      "sha256": "3bac0b431edf5d2f4c3ab685c4c2e6a9eba6f882a382f08a057b4d0a61c0ba95"
+    },
+    "nya_01": {
+      "member": "nya_01/ground_truth.csv",
+      "sha256": "c9356ca51c9ba334ff10e17ba016e165fae8c3997a8d3e95a8e902b1b682e0d1"
+    },
+    "nya_02": {
+      "member": "nya_02/ground_truth.csv",
+      "sha256": "b8409441ef486c381092b6d95c908f1cf60606a1ca10e7fee2a3da90b854a55c"
+    },
+    "nya_03": {
+      "member": "nya_03/ground_truth.csv",
+      "sha256": "8e72fd0847ec564cafd495a0c313ebac92f04dae997974acf676017434e4c227"
+    },
+    "rtp_02": {
+      "member": "rtp_02/ground_truth.csv",
+      "sha256": "7696947e4f58dcc1a279512766f55518b50f6f35209e5391b069979feb1eb203"
+    },
+    "rtp_03": {
+      "member": "rtp_03/ground_truth.csv",
+      "sha256": "df4340b2877977125b0cb0509ce6b9682e486540a0aebd51953e417fb5408997"
+    },
+    "sbs_01": {
+      "member": "sbs_01/ground_truth.csv",
+      "sha256": "f0fb81ad4265099f4eada0dcff0d51df077fc1d96f28529721a3086f6a5804c4"
+    },
+    "sbs_02": {
+      "member": "sbs_02/ground_truth.csv",
+      "sha256": "d0372d517a2c3b1a9cf57c7fe6f7a1a381d4618c9110bec91b95d218ae99182e"
+    },
+    "sbs_03": {
+      "member": "sbs_03/ground_truth.csv",
+      "sha256": "d9231edb399afb8d92417f3b155fb2332e7fec3fb325c9690c37244005e598d4"
+    },
+    "spms_01": {
+      "member": "spms_01/ground_truth.csv",
+      "sha256": "e4784e137a34f63c3d9f9cd7ca2a929b6dd21e55ed131c9b5d44afd583930886"
+    },
+    "spms_03": {
+      "member": "spms_03/ground_truth.csv",
+      "sha256": "242a9c6e3331aefcd2939b68226fe629448167bf3339784ca85750f8af552da5"
+    },
+    "tnp_01": {
+      "member": "tnp_01/ground_truth.csv",
+      "sha256": "f29d81f221806cdf540c4177bc15bda5aa71a95c7037cbce3dd0e5bff95cce6c"
+    },
+    "tnp_02": {
+      "member": "tnp_02/ground_truth.csv",
+      "sha256": "958ae9608d3e11a9be7a67abac5d99c69abb45e7c386815788dd23a5be680bb2"
+    },
+    "tnp_03": {
+      "member": "tnp_03/ground_truth.csv",
+      "sha256": "94daee4a4b9397633f2ac7b5f64208416569b52c6a5465f1daaac8383a47d329"
+    }
+  }
+}
